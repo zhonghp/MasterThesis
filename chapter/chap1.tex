@@ -1,0 +1,97 @@
+
+\rhead{\xiaowuhao{\sectionindex\quad保持特征的网格变形方法综述}}
+\section{保持特征的网格变形方法综述}
+
+\textcolor[rgb]{1.00,0.00,0.00}{两级标题之间要有过渡性文字。}可以通过一段话引出下面的文字或者对本章内容概括。%
+论文中凡引用别人的成果或非正式参考文献以外的资料，应以脚注的方式注明。%
+脚注加在每页下端，每页从①开始编号\footnote{专利、标准、技术报告、网页、报刊等不能作参考文献，可用脚注注释，还有其他一些需要说明的信息}
+
+\textbf{2.插图}书写格式说明：
+
+如图1-1所示。
+
+\begin{figure}[h]
+
+%h Here - at the position in the text where the table environment appears.
+%t Top - at the top of a text page.
+%b Bottom - at the bottom of a text page.
+%p Page of floats - on a separate float page, which is a page containing no text, only floats.
+%The standard report and article styles use the default placement tbp.
+
+    \centerline{\includegraphics{figures/pic1.eps}}
+    \ncaption{插图标题}         %添加图片标题
+\end{figure}
+
+若有多幅子图，按照图1-2方式。
+
+\begin{figure}[h]
+
+    \centering
+    \subfigure[]{\includegraphics{figures/pic1.eps}}
+    \subfigure[]{\includegraphics{figures/pic1.eps}}
+    \subfigure[]{\includegraphics{figures/pic1.eps}}
+    \subfigure[]{\includegraphics{figures/pic1.eps}}
+
+    \ncaption{插入多幅子图的格式，子图用(a),(b)标识}
+\end{figure}
+
+\textbf{3.表格}书写格式说明:
+
+插入表格的格式,，如表1-1所示。
+\begin{table}[h]
+\centering  % 表居中
+\ncaption{国际单位制中具有专门名称的导出单位}
+%\vspace{0.3cm}
+\begin{tabular}{cccc}  % {cccc} 表示各列元素对齐方式，几个字母表示几列 left-l,right-r,center-c，每一列后面可以{}限制列宽，比如c{2cm}
+\hline % \hline 在此行下面画一横线
+量的名称 &单位名称 &单位符号 &其他表示式例\\ % & 表示列的分隔线
+\hline
+频率	&赫［兹］	&Hz	&s-1 \\% \\ 表示重新开始一行
+力；重力 	&牛［顿］	&N	&kg·m/s2\\
+压力，压强；&应力	&帕［斯卡］	&Pa	N/m2\\
+能量；功；热	&焦［耳］	&J	&N·m\\
+\hline
+\end{tabular}
+
+\end{table}
+
+\textbf{4.数学公式}书写格式说明:
+数学公式的插入：对需要引用的公式要编号，公式居中，编号又对齐。
+定义公式形式如（1.1）：
+
+\begin{equation}\label{1}
+    x_{i}=\frac{-b\pm\sqrt{b^{2}-4ac}}{2a},
+\end{equation}
+\begin{equation}\label{2}
+   D_{(k,k-1)}=\left\{\begin{array}{ll}
+   1,\hspace{2cm}\texttt{如果}|f_{k}(x,y)-f_{k-1}(x,y)\geq TH|,\\
+   0,\hspace{2cm}\texttt{否则}.
+   \end{array}
+   \right.
+\end{equation}
+\begin{equation}\label{3}
+   D_{(k+1,k)}=\left\{\begin{array}{ll}
+   1,\hspace{2cm}\texttt{如果}|f_{k+1}(x,y)-f_{k}(x,y)\geq TH|,\\
+   0,\hspace{2cm}\texttt{否则}.
+   \end{array}
+   \right.
+\end{equation}
+
+注意不需要把所有的数学公式都编号，编号的时候公式单独成行，居中，编号右端对齐。不编号的公式可以不用单独成行。
+\subsection{泊松网格编辑}
+网格编辑……
+\subsubsection{网格曲面上的泊松方程}
+本文中，我们使用如下的定义在三角网格曲面的微分算子\cite{citekey1}
+
+\sijisection{\bf{四级标题}}
+
+
+\wujisection{\bf{五级标题}}
+
+\subsection{物理似然的模拟}
+
+为实现快速变形模拟这一目标
+\subsection{基于勾勒式界面的编辑方法}
+
+为实现快速变形模拟这一目标
+\subsection{本章小结}
