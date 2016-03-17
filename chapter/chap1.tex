@@ -1,11 +1,13 @@
 \rhead{\xiaowuhao{\sectionindex\quad绪论}}
 \section{绪论}
+\begin{spacing}{1.5}
 
 \subsection{研究背景和意义}
 在数字信息爆炸式增长的今天，搜索引擎无疑是人们获取信息资源的主要途径。根据Google提供的数据，2014年Google平均每天接收到的查询请求数已经超过了57亿次，2014年Google接收到的查询总数已经高达2万亿次 \footnote{数据来自Google Official History, ComScore}。自从搜索引擎出现以来，如何能够根据用户输入的查询词准确地捕捉到用户的查询意图，一直是搜索引擎面临的挑战和亟待解决的难题。
 
-2012年5月，Google首次在它的搜索页面中推出了知识图谱(Knowledge Graph)，用户在使用Google进行搜索时，除了能够获得相关的网页链接以外，还将得到更加结构化的相关信息。如图\ref{knowledgegraph}所示，用户在输入“Barack Obama”后，谷歌会在页面的右侧提供奥巴马的详细信息，包括个人简介、出生时间及地点等。知识图谱的出现大大缩小了用户查找信息的范围，当用户希望获取相关信息时，不再需要自己动手访问搜索引擎返回的网页。
+2012年5月，Google首次在它的搜索页面中推出了知识图谱(Knowledge Graph)，用户在使用Google进行搜索时，除了能够获得相关的网页链接以外，还将得到更加结构化的相关信息。例如，用户在输入“Barack Obama”后，谷歌不仅会提供相关的网络链接，还会在页面的右侧提供奥巴马的详细信息，包括个人简介、出生时间及地点等，具体如图\ref{knowledgegraph}所示。知识图谱的出现大大缩小了用户查找信息的范围，当用户希望获取相关信息时，不再需要自己动手访问搜索引擎返回的网页。
 
+%%%TODO%%%
 \begin{figure}[h]
   \centering
   \subfigure[]{\includegraphics[width=0.75\columnwidth]{figures/pic1.eps}}
@@ -13,99 +15,13 @@
   \label{knowledgegraph}
 \end{figure}
 
+知识图谱中最重要的数据来源便是大规模的知识库，如维基百科等。知识库是由描述事实的三元组组成，其中包含了大量的结构化知识。知识库中的每个三元组将实体之间的关系表示为（头部实体，关系，尾部实体），如（中国，首都，北京）等。正因为知识库包含着大量结构化的事实性知识，其在许多人工智能系统中都有着广泛的应用，如：查询扩展\cite{}、问答系统\cite{}、文本理解\cite{}等。尽管国内外已经存在着许多大规模的知识库，如：WordNet\cite{}、Yago\cite{}、Freebase\cite{}等。但是，有限的覆盖率问题始终制约着知识库的使用与发展\cite{}。除此之外，如何在计算机中表示和存储知识库，也是知识库应用中的重要一环。
+
+与结构化的知识库不同的是，随着Web2.0的兴起，互联网上涌现了大量的无标注文本数据。近年来，得益于深度学习\cite{}的发展，基于神经网络的表示学习方法使得计算机可以从大规模的无标注文本数据中自动学习得到文本的向量表示，并在许多自然语言处理领域的问题上取得了突破性的进展\cite{}。受到无标注文本中基于神经网络的表示方法鼓舞，研究人员开始探索面向知识库的表示学习方法，并尝试将知识库与文本进行联合式的表示学习，有效地解决知识库的低覆盖率问题\cite{}。然而，知识库与文本的联合表示学习方法现在还较少，而且已有的学习方法存在着一定的缺陷。
+
+综上所述，知识库与文本的联合表示方法不仅有着很大的应用前景，也有着相当大的研究价值。
+
 \subsection{国内外研究现状}
 \subsection{论文内容和结构}
 
-\textcolor[rgb]{1.00,0.00,0.00}{两级标题之间要有过渡性文字。}可以通过一段话引出下面的文字或者对本章内容概括。%
-论文中凡引用别人的成果或非正式参考文献以外的资料，应以脚注的方式注明。%
-脚注加在每页下端，每页从①开始编号\footnote{专利、标准、技术报告、网页、报刊等不能作参考文献，可用脚注注释，还有其他一些需要说明的信息}
-
-\textbf{2.插图}书写格式说明：
-
-如图1-1所示。
-
-\begin{figure}[h]
-
-%h Here - at the position in the text where the table environment appears.
-%t Top - at the top of a text page.
-%b Bottom - at the bottom of a text page.
-%p Page of floats - on a separate float page, which is a page containing no text, only floats.
-%The standard report and article styles use the default placement tbp.
-
-    \centerline{\includegraphics{figures/pic1.eps}}
-    \ncaption{插图标题}         %添加图片标题
-\end{figure}
-
-若有多幅子图，按照图1-2方式。
-
-\begin{figure}[h]
-
-    \centering
-    \subfigure[]{\includegraphics{figures/pic1.eps}}
-    \subfigure[]{\includegraphics{figures/pic1.eps}}
-    \subfigure[]{\includegraphics{figures/pic1.eps}}
-    \subfigure[]{\includegraphics{figures/pic1.eps}}
-
-    \ncaption{插入多幅子图的格式，子图用(a),(b)标识}
-\end{figure}
-
-\textbf{3.表格}书写格式说明:
-
-插入表格的格式,，如表1-1所示。
-\begin{table}[h]
-\centering  % 表居中
-\ncaption{国际单位制中具有专门名称的导出单位}
-%\vspace{0.3cm}
-\begin{tabular}{cccc}  % {cccc} 表示各列元素对齐方式，几个字母表示几列 left-l,right-r,center-c，每一列后面可以{}限制列宽，比如c{2cm}
-\hline % \hline 在此行下面画一横线
-量的名称 &单位名称 &单位符号 &其他表示式例\\ % & 表示列的分隔线
-\hline
-频率	&赫［兹］	&Hz	&s-1 \\% \\ 表示重新开始一行
-力；重力 	&牛［顿］	&N	&kg·m/s2\\
-压力，压强；&应力	&帕［斯卡］	&Pa	N/m2\\
-能量；功；热	&焦［耳］	&J	&N·m\\
-\hline
-\end{tabular}
-
-\end{table}
-
-\textbf{4.数学公式}书写格式说明:
-数学公式的插入：对需要引用的公式要编号，公式居中，编号又对齐。
-定义公式形式如（1.1）：
-
-\begin{equation}\label{1}
-    x_{i}=\frac{-b\pm\sqrt{b^{2}-4ac}}{2a},
-\end{equation}
-\begin{equation}\label{2}
-   D_{(k,k-1)}=\left\{\begin{array}{ll}
-   1,\hspace{2cm}\texttt{如果}|f_{k}(x,y)-f_{k-1}(x,y)\geq TH|,\\
-   0,\hspace{2cm}\texttt{否则}.
-   \end{array}
-   \right.
-\end{equation}
-\begin{equation}\label{3}
-   D_{(k+1,k)}=\left\{\begin{array}{ll}
-   1,\hspace{2cm}\texttt{如果}|f_{k+1}(x,y)-f_{k}(x,y)\geq TH|,\\
-   0,\hspace{2cm}\texttt{否则}.
-   \end{array}
-   \right.
-\end{equation}
-
-注意不需要把所有的数学公式都编号，编号的时候公式单独成行，居中，编号右端对齐。不编号的公式可以不用单独成行。
-\subsection{泊松网格编辑}
-网格编辑……
-\subsubsection{网格曲面上的泊松方程}
-本文中，我们使用如下的定义在三角网格曲面的微分算子\cite{citekey1}
-
-\sijisection{\bf{四级标题}}
-
-
-\wujisection{\bf{五级标题}}
-
-\subsection{物理似然的模拟}
-
-为实现快速变形模拟这一目标
-\subsection{基于勾勒式界面的编辑方法}
-
-为实现快速变形模拟这一目标
-\subsection{本章小结}
+\end{spacing}
