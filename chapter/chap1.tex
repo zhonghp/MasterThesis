@@ -31,15 +31,19 @@
 \subsubsection{知识库模型的研究}
 近年来，随着神经网络和深度学习的革命性发展，知识库模型也受到了研究人员的关注。知识库模型指的是面向知识库的表示学习方法，其主要是通过低维度的稠密向量表征出知识库中的实体和关系的语义信息，这种表示也称为知识库嵌入（Knowledge Base Embeddings），这种表示能够极大地帮助计算机表示和存储知识库。
 
-其中，Bordes等人提出的TransE模型便是最具代表性的工作。对于知识库中的任意三元组$(h,r,t)$，$h$是头部实体（head entity）、$r$是关系（relation）、$t$是尾部实体（tail entity），TransE把关系$r$的向量表示$\mathbf{r}$看作是从实体$h$的向量表示$\mathbf{h}$到实体$t$的向量表示$\mathbf{t}$的平移，并通过不断调整$\mathbf{h}$、$\mathbf{r}$和$\mathbf{t}$，使得$(\mathbf{h}+\mathbf{r})$尽可能与$\mathbf{t}$相等，即$\mathbf{h}+\mathbf{r} \approx \mathbf{t}$。通过优化上述目标，TransE能够有效地学习出实体和关系的向量表示，使得如果一个候选三元组$(h,r,t)$是有效的，那么$(\mathbf{h}+\mathbf{r})$将与$\mathbf{t}$十分相近。因此，TransE根据公式\ref{eqn:transe}对三元组$(h,r,t)$进行评分，如果$(h,r,t)$是有效的，$f_r(h,t)$将会很小：
+其中，Bordes等人提出的TransE模型便是最具代表性的工作。对于知识库中的任意三元组$(h,r,t)$，$h$是头部实体（head entity）、$r$是关系（relation）、$t$是尾部实体（tail entity），TransE把关系$r$的向量表示$\mathbf{r}$看作是从实体$h$的向量表示$\mathbf{h}$到实体$t$的向量表示$\mathbf{t}$的平移，并通过不断调整$\mathbf{h}$、$\mathbf{r}$和$\mathbf{t}$，使得$(\mathbf{h}+\mathbf{r})$尽可能与$\mathbf{t}$相等，即$\mathbf{h}+\mathbf{r} \approx \mathbf{t}$。通过优化上述目标，TransE能够有效地学习出实体和关系的向量表示，使得如果一个候选三元组$(h,r,t)$是有效的，那么$(\mathbf{h}+\mathbf{r})$将与$\mathbf{t}$十分相近。因此，TransE根据公式\ref{eqn:transe}对三元组$(h,r,t)$进行评分，如果$(h,r,t)$是有效的，$f_r(h,t)$将会很小。通过$f_r(h,t)$的定义，TransE能够帮助知识库进行知识推理，进而有效地缓解知识库的低覆盖率问题。\cite{}中的实验也证明了TransE有着比传统方法更优的性能，因此很多工作就此展开。
 \begin{equation}
   f_r(h,t)=\|\mathbf{h}+\mathbf{r}-\mathbf{t}\|_2^2
   \label{eqn:transe}
 \end{equation}
 
-尽管TransE的模型比较简单易懂，但通过$f_r(h,t)$的定义，TransE能够帮助知识库进行知识推理，进而有效地缓解知识库的低覆盖率问题。\cite{}中的实验也证明了TransE有着比传统方法更优的性能，因此很多工作就此展开。
+由于TransE的模型过于简单，使得它只能在处理一对一（1-to-1）这种类型的关系时取得比较好的效果，并不能很好地表示一对多（1-to-N）、多对一（N-to-1）以及多对多（N-to-N）类型的关系。例如，对于一个多对一的关系$r$，$\forall i \in \{ 0, ..., m \}$，$(h_i, r, t)$都是有效的，TransE的模型会使得$\mathbf{h_0}=...=\mathbf{h_m}$，这显然是不合理的。为了解决TransE在表示这些关系时的问题，Wang在2014年提出了TransH\cite{}，其主要思想是每一个实体在对于不同的关系时都会有不同的向量表示，每个关系向量都有自己特定的超平面。对于任意一个关系$r$，TransH不仅会学习它的向量表示$\mathbf{r}$，还会学习出它所位于超平面的法向量表示$\mathbf{w_r}$。对于给定的三元组$(h,r,t)$，TransH首先会将实体向量$\mathbf{h}$和$\mathbf{t}$投影到关系$r$的超平面中，得到向量$\mathbf{h_r}$和$\mathbf{h_t}$，其中$\mathbf{h_r}=\mathbf{h}-\mathbf{w_r}^\top\mathbf{h}\mathbf{w_r}$、$\mathbf{t_r}=\mathbf{t}-\mathbf{w_r}^\top\mathbf{t}\mathbf{w_r}$。因此，TransH根据公式\ref{eqn:transh}对三元组进行评分。
+\begin{equation}
+  f_r(h,t)=\|\mathbf{h_r}+\mathbf{r}-\mathbf{t_r}\|_2^2
+  \label{eqn:transh}
+\end{equation}
 
-由于TransE的模型过于简单，使得它只能在处理一对一（1－to－1）这种类型的关系时取得比较好的效果，并不能很好地表示一对多（1－to－N）、多对一（N－to－1）以及多对多（N－to－N）类型的关系。例如，对于一个多对一的关系$r$，$\forall i \in \{ 0, ..., m \}, (h_i, r, t)$都是有效的，TransE的模型会使得$\mathbf{h_0} = ... = \mathbf{h_m}$，这显然是不合理的。通过修改TransE的评分函数和目标函数，Wang
+通过修改TransE的评分函数和目标函数，Wang
 \subsubsection{文本模型的研究}
 \subsubsection{对齐模型的研究}
 
