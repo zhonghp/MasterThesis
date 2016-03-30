@@ -1,7 +1,8 @@
 \usepackage{amssymb,amsmath} % 各种数学符号
 \usepackage{mathrsfs} % 哥特体
 \usepackage[dvips]{color} % 字体和背景颜色
-\usepackage[dvips]{graphicx} % 加载图片
+%\usepackage[dvips]{graphicx} % 加载图片
+\usepackage{graphicx}
 \usepackage{subfigure}%加载子图
 %\usepackage{picins} %文字环绕图片
 \usepackage{CJK}%支持中、日、韩文
@@ -22,9 +23,12 @@
 \usepackage{rotating}
 \usepackage{array}
 \usepackage{algorithmic,algorithm}
+\usepackage{algpseudocode}
 \usepackage{url} % 支持脚注网址
 %%% 超链接和PDF书签宏包hyperref
 %\usepackage[dvipdfm, CJKbookmarks=true, bookmarks=true, bookmarksnumbered=true, ]{hyperref}
 %
 %%% 用dvipdfmx正确生成中文标签
 %\AtBeginDvi{\special{pdf:tounicode GBK-EUC-UCS2}}
+
+\newcommand{\refeq}[1]{{Equation (\ref{#1})}}

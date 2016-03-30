@@ -1,26 +1,212 @@
 
-\rhead{\xiaowuhao\sectionindex\quad线性约束网格变形方法}
-\section{线性约束网格变形方法}
+\rhead{\xiaowuhao\sectionindex\quad改进篇章向量的联合表示方法}
+\section{改进篇章向量的联合表示方法}
 
-内容概括。
+根据本文第二章提出的包含知识库模型、文本模型和对齐模型的联合表示体系，不难发现对齐模型是其中最重要的一环。如果没有一个很好的对齐模型，性能再好的知识库模型和文本模型都不能保证知识库向量和文本向量能够位于同一个向量空间，因此不能进行知识库以外的知识推理。本文第二章根据篇章向量在文本建模问题上的良好性能提出了基于篇章向量的对齐模型，通过篇章向量模型，我们能够很好地对实体和实体对应的描述文本进行建模，从而完成知识库向量和文本向量的对齐操作。然而，在第二章中的实验中，我们可以发现基于篇章向量的联合表示方法并不能超越现有的方法，仍然有着可以改进和提高的空间。
 
-\subsection{保持局部特征的线性约束条件}
+基于篇章向量的对齐模型在对实体向量和文本向量进行建模时，会对描述文本中的词进行负采样，从而提高词与词之间的可区分性，例如在“苹果公司”这一实体对应的描述文本中，跟“公司”相关的词就会频繁出现，很少会提及跟“水果”相关的词。通过第二章中实验，我们可以发现这样的模型确实可以有效地提高词向量的质量，然而对于实体向量和关系向量的影响却是比较有限的。究其原因，这是因为基于篇章向量的对齐模型在对齐实体向量和文本向量时，没有考虑到实体与实体之间的可区分性，并没有对实体进行负采样。因此，在本章中，我们将针对这一点对基于篇章向量的对齐模型进行改进，并参考本文第二章的实验设置，对改进模型进行详细的实验比较和分析。在改进篇章向量的对齐模型中，我们在对文本词进行负采样的同时，也会对实体进行负采样，从而进一步地提高实体向量之间的可区分性，使得改进的联合表示方法有着更优秀的性能。
 
-由于移动终端的屏幕尺寸相比台式机终端大大缩小，因此相关的图形在屏幕上的可视尺寸也大幅缩小，%
-这意味着原来在台式机上一般运用几万到几十万个像素渲染三维模型，即使由于视距的拉远，%
-通常也能保持在近万个像素左右；在移动终端上则可能仅仅采用数千个到数万个像素进行渲染，%
-当视距拉远时甚至可能仅采用数百个像素。
+\subsection{改进篇章向量的对齐模型}
+在基于篇章向量的对齐模型中，我们定义了$\Pr(w | e)$作为给定实体$e$时，词$w$出现在其对应的描述文本中的概率，并通过最大似然估计，对实体向量和词向量进行对齐。同样地，我们也可以通过修改对应的正则项，定义$\Pr(e | w)$为给定文本词$w$时，实体$e$作为其描述的实体的概率，具体的定义如公式\ref{eqn:ewprobability}所示。
+\begin{equation}
+	\Pr(e|w)=\frac{\exp\{z(e,w)\}}{\sum_{\tilde{e}\in\mc{E}}\exp\{z(\tilde{e},w)\}}
+	\label{eqn:ewprobability}
+\end{equation}
 
-\subsection{仿射约束的有效性}
+根据$\Pr(w | e)$和$\Pr(e | w)$的定义，我们可以定义$\mc{L}_p(e,w)$作为实体$e$和词$w$的似然函数，具体定义如公式\ref{eqn:ewlikelihood}所示。
+\begin{equation}
+	\mc{L}_p(e,w) = \log\Pr(w|e) + \log\Pr(e|w)
+	\label{eqn:ewlikelihood}
+\end{equation}
 
-此处省略N个字……
+因此，通过对所有实体及其对应描述文本的似然函数进行最大似然估计，我们就能完成实体向量和词向量的对齐操作：
+\begin{equation}
+	\mc{L}_A = \sum_{i=1}^{|\mc{E}|}\sum_{n=1}^{N_i}\mc{L}_p(e_i, w_{i,n})
+	\label{eqn:newalignobjective}
+\end{equation}
 
-\subsection{局部刚性的线性约束}
+仔细观察改进模型的定义，我们可以发现改进模型在定义实体$e$和文本词$w$的似然函数时，不同于基于篇章向量的对齐模型只考虑了$\Pr(w|e)$，改进模型还考虑了$\Pr(e|w)$。而在计算$\Pr(w|e)$和$\Pr(e|w)$时，我们都将采用负采样技术。简单地说，在计算$\Pr(w|e)$时，我们将对实体$e$对应的描述文本中的词$w$进行负采样，而在计算$\Pr(e|w)$时，将对词$w$所对应的实体$e$进行负采样。具体的负采样技术将会在下一节中进行详细的介绍。
 
-此处省略N个字……
-\subsection{线性约束网格变形方法实验结果}
+\subsection{模型的训练方法}
+在对本文提出的联合表示模型进行训练时，我们将使用随机梯度下降方法（Stochastic Gradient Descent）对知识库模型、文本模型和对齐模型同时进行优化。同时，为了提高程序的性能，我们参考了word2vec的实现，使用多线程机制对模型进行异步训练，并将实体向量、关系向量和词向量存储在共享的内存空间中，使得各个模型都能直接获取这些向量并进行修改。由于实体和词的数量都是比较大的，如果对模型中的概率和似然函数直接进行计算，需要庞大的计算资源和耗费大量的时间，这是不切实际的。因此，在本文中，我们将采用负采样技术对模型的训练进行优化。
 
-此处省略N个字……
+\subsubsection{负采样技术}
+在Skip-gram模型中，我们需要对概率$\Pr(w|v)$进行计算。根据$\Pr(w|v)$的定义，我们可以发现，公式\ref{eqn:wvprobability}中的分母需要对词汇表$\mc{V}$中的所有词进行计算，这需要耗费大量的计算时间。为了节省计算$\Pr(w|v)$时分母所需要的庞大计算量，Mnih等人尝试利用层次softmax（Hierarchical Softmax）的技术对其进行优化\cite{}。层次softmax技术通过对词汇表中的词构造一个树形结构，使得求解对应的概率值时，只需要$O(log| \mc{V} |)$次运算，而不再需要此前的$O(| \mc{V} |)$次运算，极大地降低了模型的时间复杂度。然而，由于层次softmax高度依赖于构造的树形结构，所以Mikolov等人在2013年提出了负采样技术（Negative Sampling），能够在保证Skip-gram模型性能的同时有效地提升Skip-gram的训练效率\cite{}。
+
+为了避免精确计算出$\Pr(w|v)$中分母的正则项，负采样技术构造一个与之接近的优化目标，使得在最大化正样本的似然函数的同时，也能最小化负样本的似然函数：
+\begin{equation}
+	\Pr(w|v) \approx \Pr(D=1|w,v)\prod_{i=1}^{c}\mathbb{E}_{\tilde{w}_{i}\sim\Pr_{\text{neg}}(\tilde{w}_{i})}[\Pr(D=0|\tilde{w}_{i},v)]
+	\label{eqn:wvnegativesampling}
+\end{equation}
+其中，$c$表示负样本的个数，$\tilde{w}_{i}$表示除$w$以外的负样本，$\Pr(D=1|w,v)$表示目标词与上下文词作为正例出现的概率，而$\Pr(D=0|\tilde{w}_{i},v)$表示负例出现的概率，具体定义如下所示：
+\begin{equation}
+	\Pr(D=1|w, v) ＝ \sigma (z(w, v))
+\end{equation}
+\begin{equation}
+	\Pr(D=0|w_i, v) = 1 - \sigma (z(w_i, v))
+\end{equation}
+\begin{equation}
+	\sigma(x) = \frac{1}{1+e^{-x}}
+\end{equation}
+
+由于联合表示模型中的概率定义都与Skip-gram中$\Pr(w|v)$的定义比较类似，如果对其进行直接的计算，需要耗费巨大的计算量，因此我们都可以采用负采样技术进行优化：
+\begin{equation}
+	\Pr(h|r,t)\approx \Pr(D=1|h,r,t)\prod_{i=1}^{c}\mathbb{E}_{\tilde{h}_{i}\sim\Pr_{\text{neg}}(\tilde{h}_{i})}[\Pr(D=0|\tilde{h}_{i},r,t)]
+\end{equation}
+\begin{equation}
+	\Pr(w|e) \approx \Pr(D=1|w,e)\prod_{i=1}^{c}\mathbb{E}_{\tilde{w}_{i}\sim\Pr_{\text{neg}}(\tilde{w}_{i})}[\Pr(D=0|\tilde{w}_{i},e)]
+\end{equation}
+
+\subsubsection{伪代码}
+为了清晰地展示本章提出的改进篇章向量的联合表示方法，我们列出了模型训练的伪代码：
+\begin{algorithm}
+\caption{联合表示模型的学习算法}
+\label{learningalgo}
+	\begin{algorithmic}[1]
+		\Require 
+		 	knowledge base $\Delta={(h,r,t)}$, entity set $\mc{E}$, relation set $\mc{R}$; 
+		 	text corpus $\Theta={(e,d)}$, word vocabulary $\mc{V}$;
+		 	dimension of embeddings $k$, number of negative samples $c$, max skip-range $s$, learning rate $\alpha$, maximum epoches $m,n$.
+		 \Ensure
+		 	all the embeddings of $h, r, t$ and $w$, where $h,t \in \mc{E}$, $r \in \mc{R}$ and $w \in \mc{V}$.
+		 \State /*Thread for training knowledge model*/
+		 \Function{KnowledgeModel}{}
+		 	\For{$i\in$ range$(m)$}
+		 		\For {$(h,r,t)\in\Delta$}
+		 		\State //Update embeddings with gradients derived from \refeq{eqn:factobjective}
+		 		\EndFor
+		 		\If{signal $> 0$}
+		 			break
+		 		\EndIf
+		 	\EndFor
+		 \EndFunction
+		 \State
+		 \State /*Thread for training text and alignment model*/
+		 \Function{TextAlignModel}{}
+		 	\For{$i\in$ range$(n)$}
+		 		\For {$(e,d)\in\Theta$}
+		 			\For {$(w,v)\in$ ConcurringPairsFrom$(d, s)$}
+		 				\State //Update embeddings with gradients derived from \refeq{eqn:wvprobability}
+		 			\EndFor
+		 			\For {$w \in d$}
+		 				\State //Update embeddings with gradients derived from \refeq{eqn:ewlikelihood}
+		 			\EndFor
+		 		\EndFor
+		 	\EndFor
+		 	\State signal $\gets 1$
+		 \EndFunction
+		 \State
+		 \State signal $\gets 0$ 
+		 \For {$e\in\mc{E}$}
+		 	\State $e \gets$ Uniform$(\frac{-6}{\sqrt{k}}, \frac{6}{\sqrt{k}})$
+		 \EndFor
+		 \For {$r\in\mc{R}$}
+		 	\State $r \gets$ Uniform$(\frac{-6}{\sqrt{k}}, \frac{6}{\sqrt{k}})$
+		 \EndFor
+		 \For {$w\in\mc{V}$}
+		 	\State $w \gets$ Uniform$(\frac{-6}{\sqrt{k}}, \frac{6}{\sqrt{k}})$
+		 \EndFor
+		 \State
+		 \State Thread.Start(KnowledgeModel)
+		 \State Thread.Start(TextAlignModel)
+		 \State Thread.Join()
+	\end{algorithmic}
+\end{algorithm}
+
+\subsection{实验结果}
+为了有效且公平地比较本章提出的改进篇章向量的联合表示方法和本文第二章中提出的基于篇章向量的联合表示方法，我们将采用与第二章完全一致的实验设置，即在同样的数据集上进行实体之间的链接预测实验、三元组实例的分类实验和词的类比推理实验。
+
+\subsubsection{实体的链接预测实验}
+我们将在FB15K上进行实体的链接预测，并报告正确实体的平均排名（Mean）以及排名前十的实体中正确实体的比例（Hits@10）。在训练改进篇章向量的联合表示模型时，模型的参数对实验结果有着很大的影响，具体的模型参数包括：向量的维度大小$k$、负采样时负样本的个数$c$、滑动窗口的大小$s$、学习率$\alpha$以及迭代次数$m$和$n$。为了选择出最优的参数设置，我们参考以往工作中的参数选择方案\cite{}：在固定范围内枚举每个参数的值，然后根据验证集的性能选择最优的参数设置，最后报告该参数设置在测试集上的实验结果。在实体的链接预测实验中，我们从$\{50, 100, 150\}$中选择向量的维度$k$、从$\{0.01, 0.025\}$中选择学习率$\alpha$、从$\{5, 10\}$中选择负样本个数$c$、从$\{5, 10\}$中选择滑动窗口大小$s$以及只遍历文本语料$1$次，并根据验证集的实验结果，选择本章提出模型的最优参数设置：$k=100, \alpha=0.025, c=10, s=5$。最后，在最优参数设置下，模型在测试集上的实验结果如表\ref{tab:newlpresult}所示。
+
+\begin{table}[H]
+	\caption{实体链接预测的实验结果}
+	\label{tab:newlpresult}
+	\centering
+	\footnotesize{
+		\begin{tabular}{c|cc|cc}
+			\toprule
+			\multirow{2}{*}{性能指标} & \multicolumn{2}{c|}{MEAN} & \multicolumn{2}{c}{HITS@10}\\
+ 							&Raw			&Filtered 			&Raw 		&Filtered	\\
+			\midrule
+			TransE			&243			&125				&34.9			&47.1	\\
+			TransH(unif.)	&211			&84					&42.5			&58.5	\\
+			TransH(bern.)	&212			&87					&45.7			&64.4	\\
+			pTransE			&170			&52					&48.5			&70.0		\\
+			Jointly(anchor)	&\textbf{166}	&47					&49.9			&72.0		\\
+			Jointly(p2v)	&167			&\textbf{39}		&\textbf{51.7}	&\textbf{77.3}		\\
+			\midrule
+			Jointly(desp)	&167			&\textbf{39}		&\textbf{51.7}	&\textbf{77.3}		\\
+			\bottomrule
+		\end{tabular}
+	}
+\end{table}
+
+其中，Jointly(desp)指的是本章提出的改进篇章向量的联合表示学习方法。观察表中的实验结果，可以发现：与本文第二章中提出的基于篇章向量的联合表示模型对比，改进的模型有着明显的性能提高，除此之外，改进模型的性能也超越了现有的最优方法Jointly(anchor)。究其原因，这是因为改进篇章向量的对齐模型在对齐实体向量和词向量时，考虑到了描述文本中的词对实体的影响，从而提高了实体之间的可区分度。
+
+\subsubsection{三元组实例的分类实验}
+我们将在FB44K上进行三元组的分类实验，并报告模型在四种不同类型的三元组中的分类准确率：都是知识库内的实体（$e-e$）、头部实体是知识库外的而尾部实体不是（$w-e$）、尾部实体是知识库外的而头部实体不是（$e-w$）以及头部实体和尾部实体都是知识库外的（$w-w$）。根据模型在验证集上的结果，我们选择模型在三元组分类实验中的最优参数设置：$k=150, \alpha=0.025, c=10, s=5$以及遍历文本语料$6$次。模型在测试集上的实验结果具体如表\ref{tab:newtcresult}所示。
+
+\begin{table}[H]
+	\caption{三元组分类的实验结果} 
+	\label{tab:newtcresult}
+	\centering
+	\footnotesize{
+		\begin{tabular}{>{\centering\arraybackslash}m{1.6in}|>{\centering\arraybackslash}m{0.32in}>{\centering\arraybackslash}m{0.32in}>{\centering\arraybackslash}m{0.32in}>{\centering\arraybackslash}m{0.32in}>{\centering\arraybackslash}m{0.32in}}
+			\toprule
+			\multicolumn{1}{>{\centering\arraybackslash}m{1.6in}|}{类型}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{$e-e$}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{$w-e$}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{$e-w$}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{$w-w$}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{all}\\
+			\midrule
+			\multicolumn{1}{>{\centering\arraybackslash}m{1.6in}|}{Respectively}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{94.0}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{51.7}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{51.0}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{69.0}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{73.6}\\
+			\multicolumn{1}{>{\centering\arraybackslash}m{1.6in}|}{Jointly(anchor)}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{95.2}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{65.3}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{65.1}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{76.2}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{79.9}\\
+			\midrule
+			\multicolumn{1}{>{\centering\arraybackslash}m{1.6in}|}{Jointly(p2v)}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{96.1}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{66.7}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{66.1}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{76.4}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{80.9}}\\
+			\midrule
+			\multicolumn{1}{>{\centering\arraybackslash}m{1.6in}|}{Jointly(desp)}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{96.1}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{66.7}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{66.1}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{76.4}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{80.9}}\\
+			\bottomrule
+		\end{tabular}
+	}
+\end{table}
+
+观察实验结果，我们可以发现：无论是对哪种类型的三元组进行分类，改进篇章向量的联合表示模型都能比基于篇章向量的模型和基于实体链接的模型取得更好的结果，这说明了本章所提出的改进模型在联合学习知识库和文本表示时的实用性和有效性。在学习实体和描述文本的共现关系时，单方面地考虑实体对文本词的影响是不够的，把文本词对实体的影响也考虑进模型的设计当中，将有效地提升模型的性能。
+
+\subsubsection{词的类比推理实验}
+我们将在Mikolov等人提供的标准数据集上\cite{}检验模型在词类比推理实验中的性能：准确率（Accuracy）和排名前十的词中正确词的比例（Hits@10）。在本实验中，我们将直接使用三元组分类实验中的词向量，具体实验结果如表\ref{tab:newwordarresult}和表\ref{tab:newphrasearresult}所示。
+
+\begin{table}
+	\caption{词汇级别类比推理的实验结果}
+	\label{tab:newwordarresult}
+	\centering
+	\begin{tabular}{c|>{\centering\arraybackslash}m{0.13\textwidth}|>{\centering\arraybackslash}m{0.11\textwidth}}
+		\toprule
+		性能指标			&Accuracy(\%)		&Hits@10(\%)\\
+		\midrule
+		Skip-gram		&67.4				&86.7\\
+		Jointly(anchor)	&\textbf{69.4}		&87.7\\
+		Jointly(name)	&44.5				&69.7\\
+		Jointly(p2v)	&69.3				&\textbf{88.3}\\
+		\midrule
+		Jointly(desp)	&69.3				&\textbf{88.3}\\
+		\bottomrule
+	\end{tabular}
+\end{table}
+\begin{table}
+	\caption{短语级别类比推理的实验结果}
+	\label{tab:newphrasearresult}
+	\centering
+	\begin{tabular}{c|>{\centering\arraybackslash}m{0.13\textwidth}|>{\centering\arraybackslash}m{0.11\textwidth}}
+		\toprule
+		性能指标			&Accuracy(\%)		&Hits@10(\%)\\
+		\midrule
+		Skip-gram		&22.0				&63.6\\
+		Jointly(anchor)	&26.2				&68.1\\
+		Jointly(name)	&11.5				&46.0\\
+		Jointly(p2v)	&\textbf{49.0}		&\textbf{86.5}\\
+		\midrule
+		Jointly(desp)	&\textbf{49.0}		&\textbf{86.5}\\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+通过实验结果，我们可以发现：改进篇章向量的联合表示模型能够学习出更好的词向量表示，使得词向量能够更有效地捕捉到词的语义信息。在改进模型中，训练词向量时不仅会考虑上下文词对目标词的影响，还会从整篇描述文本的角度考虑词的语义信息：通过实体和描述文本的对应关系，考虑了实体向量和词向量的相互作用，从而提高词向量之间的可区分性。
+
 \subsection{本章小结}
-
-此处省略N个字…… 

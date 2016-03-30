@@ -1,39 +1,248 @@
+\rhead{\xiaowuhao\sectionindex\quad基于篇章向量的联合表示方法}
+\section{基于篇章向量的联合表示方法}
 
-\rhead{\xiaowuhao\sectionindex\quad网格顶点的微分坐标表示}
-\section{网格顶点的微分坐标表示}
+对于给定的知识库和文本语料，如何有效地对知识库表示和文本表示进行对齐建模（Alignment Modeling），使得知识库向量和文本向量能够位于同一个向量空间中，是联合表示方法的关键。如果不能有效地对齐知识库向量和文本向量，即使其他两个模型做得再好（知识库模型和文本模型），所生成的向量也无法直接进行运算和比较，从而不能进行知识库外的知识推理。
 
-从此章开始，为理论（方法 ）及应用的创新点：
-硕士论文：理论型论文，要有2个创新点，1个应用点；工程型论文，需有1个创新点，2个应用点。
-博士论文： 至少3个理论创新点，1个应用创新点
+知识库和文本联合表示的思想是在Wang等人的论文中提出的\cite{}。单独的知识库模型只能帮助知识库进行知识库内部的知识推理，对于不在知识库中的实体，这种模型便无能为力。实体常常以词的形式出现在文本语料中，现有的文本模型已经能够较好地学习出词与词之间的潜在关系，比如“北京”与“中国”之间的“首都”关系等\cite{}。因此，Wang等人提出了包含知识库模型、文本模型和对齐模型在内的联合表示体系，并提出了基于实体别名和基于维基百科中实体链接的两种对齐方法。然而，根据本文绪论部分的讨论，我们可以发现：基于实体别名的对齐模型将严重降低词向量的质量，在实际中并不可用，而基于维基百科中实体链接的对齐模型只能适用于以维基百科词条为基础的知识库，如果要推广到其他知识库中，需要大量的人工标注信息。总的来说，上述模型都难以适用。
 
-\subsection{网格的局部几何特征}
-
-网格编辑……
-\begin{equation}\label{1}
-    x_{i}=\frac{-b\pm\sqrt{b^{2}-4ac}}{2a},
-\end{equation}
-\subsection{顶点的离散微分坐标}
-
-本文中，我们使用如下的定义在三角网格曲面的微分算子
-。。。
-
-如图2-1所示。
-
+鉴于此，本章系统地探索了基于知识库模型、文本模型和对齐模型的联合表示体系，并根据实体与实体描述之间的对应关系，提出了利用实体描述对知识库向量和文本向量进行对齐的方法，具体如图\ref{illustration}所示。为了有效地对实体和实体描述之间的对应关系进行建模，进而完成向量之间的对齐操作，本章还提出了基于篇章向量的对齐模型。不同于以往需要大量人工标注信息的模型，本章提出的模型只依赖于实体的描述文本，而实体的描述文本在实际中是容易获取的，如产品的介绍说明等，因此本章提出的方法将更加实用。
 \begin{figure}[h]
-
-%h Here - at the position in the text where the table environment appears.
-%t Top - at the top of a text page.
-%b Bottom - at the bottom of a text page.
-%p Page of floats - on a separate float page, which is a page containing no text, only floats.
-%The standard report and article styles use the default placement tbp.
-
-    \centerline{\includegraphics{figures/pic3.eps}}
-    \ncaption{插图标题}         %添加图片标题
+	\centerline{\includegraphics{figures/pic1.eps}}
+	\caption{利用实体描述对齐知识库向量和文本向量的示例}
+	\label{illustration}
 \end{figure}
 
-\subsection{线性约束的变形算法}
+\subsection{基于篇章向量的联合表示模型}
+为了能够在本文更一致地描述知识库与文本联合表示方法中的各项技术，我们将统一定义全文的符号系统。对于一个包含了大量事实性三元组$(h,r,t)$的知识库$\Delta$，$h,t$是实体，$r$是关系，即$h,t \in \mc{E}$（实体集合），$r \ in \mc{R}$（关系集合），它们的向量表示分别为$\mathbf{h}$、$\mathbf{t}$和$\mathbf{r}$。对于实体集合中的实体$e_i$，$d_i$是其对应的描述文本。在本文中，实体的描述文本是由词的序列组成，其中$w_{i,n}$表示文本$d_i$中的第$n$个词，$N_i$表示文本$d_i$中词的总数，文本中的词都是词汇表$\mc{V}$中的一员。最后，我们使用$\mc{I}$表示所有实体和文本词的集合，即$\mc{I} = \mc{E} \cup \mc{V}$。
 
-\begin{equation}\label{2}
-    x_{i}=\frac{-b\pm\sqrt{b^{2}-4ac}}{2a},
+\subsubsection{基于pTransE的知识库模型}
+pTransE（Probabilistic TransE）是对TransE模型在概率意义上的改进，是在Wang等人的论文中提出的\cite{}。本文主要采用了pTransE作为知识库模型，这里将对pTransE进行详细的介绍。
+
+对于任意的三元组$(h,r,t)$，pTransE根据公式\ref{eqn:ptransescore}对其进行评分：
+\begin{equation}
+	z(h,r,t)=b-\frac{1}{2}\|\mathbf{h}+\mathbf{r}-\mathbf{t}\|_2^2
+	\label{eqn:ptransescore}
 \end{equation}
+其中，$b$是为了保持模型数值稳定性的常数，在本文的实验中，我们把它设置为常数$7$。根据$z(h,r,t)$的定义，我们可以知道：如果三元组$(h,r,t)$是有效的，那么$z(h,r,t)$的值将会比较大。由此，pTransE定义了$\Pr(h|r,t)$作为当关系为$r$和尾部实体为$t$时，头部实体是$h$的概率：
+\begin{equation}
+	\Pr(h | r,t)=\frac{\exp\{z(h,r,t)\}}{\sum_{\tilde{h}\in\mc{I}}\exp\{z(\tilde{h},r,t)\}}
+	\label{eqn:kbhprobability}
+\end{equation}
+
+类似地，通过修改上式中的分母项，pTransE也定义了$\Pr(r|h,t)$和$\Pr(t|h,r)$，具体如公式\ref{eqn:kbrprobability}和公式\ref{eqn:kbtprobability}所示：
+\begin{equation}
+	\Pr(r | h,t)=\frac{\exp\{z(h,r,t)\}}{\sum_{\tilde{r}\in\mc{R}}\exp\{z(h, \tilde{r}, t)\}}
+	\label{eqn:kbrprobability}
+\end{equation}
+\begin{equation}
+	\Pr(t | h,r)=\frac{\exp\{z(h,r,t)\}}{\sum_{\tilde{t}\in\mc{I}}\exp\{z(h, r, \tilde{t})\}}
+	\label{eqn:kbtprobability}
+\end{equation} 
+
+根据公式\ref{eqn:kbhprobability}、\ref{eqn:kbrprobability}和\ref{eqn:kbtprobability}的定义，pTransE定义$\mc{L}_f(h,r,t)$作为三元组$(h,r,t)$的似然函数，并对知识库中的所有三元组进行最大似然估计，从而学习出知识库中实体和关系的向量表示，具体如下所示：
+\begin{equation}
+	\mc{L}_f(h,r,t) = \log\Pr(h|r,t) + \log\Pr(t|h,r) + \log\Pr(r|h,t)
+	\label{eqn:factobjective}
+\end{equation}
+\begin{equation}
+	\mc{L}_K = \sum_{(h,r,t)\in\Delta}\mc{L}_f(h,r,t)
+	\label{eqn:kbobjective}
+\end{equation}
+
+\subsubsection{基于Skip-gram的文本模型}
+Skip-gram是文本模型中非常高效并且实用的模型\cite{}。通过对目标词与上下文词之间的共现关系进行建模，Skip-gram模型能够有效地学习出词的向量表示，并使得这些词向量很好地捕捉到词的语义信息。除此之外，Mikolov等人在大量的实验中还发现\cite{}，由Skip-gram模型学习得到的词向量在一定程度上可以体现出词与词之间的潜在关系，如$vec(国王)-vec(王后) \approx vec(男人)-vec(女人)$。因此，我们主要采用了Skip-gram作为文本模型，本节将对其进行详细的介绍。
+
+\begin{figure}[h]
+	\centerline{\includegraphics{figures/pic1.eps}}
+	\caption{Skip-gram模型的结构示意图}
+	\label{skipgram}
+\end{figure}
+Skip-gram模型的具体结构如图\ref{skipgram}所示。与神经网络语言模型不同的是，Skip-gram没有隐藏层，只有简单的两层网络结构，因此模型的参数会比较少，学习过程也会十分高效。Skip-gram将目标词的向量表示作为模型的输入，对滑动窗口内的上下文词进行预测，从而学习到目标词的向量表示：
+\begin{equation}
+	\Pr(w | v) = \frac{\exp\{z(w,v)\}}{\sum_{\tilde{w}\in\mc{V}}\exp\{z(\tilde{w}, v)\}}
+	\label{eqn:wvprobability}
+\end{equation}
+
+在Skip-gram的原始文章中，Mikolov等人通过向量之间的内积运算对目标词与上下文词的相似度进行衡量，也就是说$z(w,v) = \mathbf{w}^\top\mathbf{v}$。为了与知识库模型保持一致，我们也通过向量之间的平移操作对目标词与上下文词之间的关系进行建模，所以我们将使用向量之间的欧几里德距离：$z(w,v) = b - \frac{1}{2}\|\mathbf{w}-\mathbf{v}\|_2^2$，Wang等人也在论文中证明了这两者在理论上是等价的\cite{}。Skip-gram模型的优化目标是最大化：
+\begin{equation}
+	\mc{L}_T = \sum_{(w,v)\in\mc{C}}n_{wv}\log\Pr(w|v)
+	\label{eqn:textobjective}
+\end{equation}
+其中$\mc{C}$表示文本语料中在滑动窗口内共同出现的目标词与上下文词的词对集合，$n_{wv}$表示词对$(w,v)$在文本语料中出现的次数。
+
+\subsubsection{基于篇章向量的对齐模型}
+篇章向量模型是Le等人在Skip-gram模型的基础上提出的\cite{}，他们在Skip-gram的网络结构上引入了篇章向量以获取整个句子或者段落的向量表示，本文所提及的篇章向量模型指的是他们论文中的PV-DBOW模型。由于篇章向量对篇章和文本词之间关系的建模是比较高效的，而且模型在文本分类和情感分析等任务中都取得了很好的效果，所以我们提出了基于篇章向量的对齐模型，本节将对其进行详细的介绍。
+
+\begin{figure}[h]
+	\centerline{\includegraphics{figures/pic1.eps}}
+	\caption{篇章模型的结构示意图}
+	\label{paragraphvector}
+\end{figure}
+篇章向量模型的具体结构如图\ref{paragraphvector}所示。与Skip-gram模型不同的是，篇章向量模型将篇章的向量表示作为模型的输入，对篇章内的所有词进行逐一预测，从而学习到篇章的向量表示。在本文中，篇章对应的就是实体的描述文本，由于实体的描述文本是跟知识库中的实体一一对应，因此我们可以直接使用知识库中的实体向量作为篇章向量：
+\begin{equation}
+	\Pr(w | e) = \frac{\exp\{z(e,w)\}}{\sum_{\tilde{w}\in\mc{V}}\exp\{z(e, \tilde{w})\}}
+	\label{eqn:weprobability}
+\end{equation}
+
+同样地，为了与知识库模型和文本模型保持一致，我们也使用向量之间的欧几里得距离对篇章向量与文本词的相似度进行衡量，即$z(e,w)=b - \frac{1}{2}\|\mathbf{e}-\mathbf{w}\|_2^2$。本节使用欧几里德距离的另一个好处是能够保证知识库向量和文本向量能够位于同一个向量空间中，使得向量之间的加减运算变得有意义。篇章向量模型的优化目标是最大化：
+\begin{equation}
+	\mc{L}_A = \sum_{i=1}^{|\mc{E}|}\sum_{n=1}^{N_i}\log\Pr(w_{i,n}|e_i)
+	\label{eqn:alignobjective}
+\end{equation}
+
+\subsection{实验设置及实验结果}
+为了验证本章提出的基于篇章向量的联合表示方法的有效性，我们设计了基于Freebase和Wikipedia的多个标准数据集上的链接预测实验（Link Prediction）和三元组分类实验（Triplet Classification）。最后，为了验证词向量的质量，我们还进行了类比推理实验（Analogical Reasoning）\cite{}。
+
+\subsubsection{实验设置}
+在实验设置方面，本文遵循了以往研究中所采用的实验设置\cite{}。为了能够有效地学习到知识库和文本的联合表示，我们需要知识库数据和文本语料。在本文中，我们使用Wikipedia作为文本语料，在进行链接预测实验时，我们采用FB15K作为知识库\cite{}，而在进行三元组分类实验时，我们将采用更大的知识库FB45K\cite{}。知识库FB15K和FB45K的具体信息如表\ref{tab:kgmeta}所示：
+\begin{table}[H]
+	\centering
+	\footnotesize{
+		\caption{知识库数据的信息}
+		\label{tab:kgmeta}
+		\begin{tabular}{|c|c|c|}
+			\hline
+			数据集&\textbf{FB15K}&\textbf{FB45K}\\
+			\hline
+			\#Rel.&1,345&4,490\\
+			\#Ent.&14,951&43,793,608\\
+			\#Trip.(Train)&483,142&123,062,855\\
+			\#Trip.(Valid)&50,000&22,617,917\\
+			\#Trip.(Test)&59,071&22,617,918\\
+			\hline
+		\end{tabular}
+	}
+\end{table}
+\begin{table}[H]
+	\centering
+	\footnotesize{
+		\caption{知识库FB45K的数据信息}
+		\label{tab:triplets}
+		\begin{tabular}{|c|c|c|}
+			\hline
+			类型&\#Trip.(Valid)&\#Trip.(Test)\\
+			\hline
+			$e-e$&12,305,200&12,305,200\\
+			$w-e$&4,835,177&4,835,178\\
+			$e-w$&4,750,746&4,750,746\\
+			$w-w$&726,794&726,794\\
+			\hline
+		\end{tabular}
+	}
+\end{table}
+
+下面我们将详细描述本文实验中所使用的数据集以及对应的预处理方法：
+\begin{enumerate}
+	\item Wikipedia\quad Wikipedia是用来学习词向量表示的常用语料\cite{}。在本文中，我们所使用的Wikipedia共有4,655,447个词条。为了与Wang等人的实验设置保持一致\cite{}，我们使用了相同的预处理方法，包括断句（sentence segmentation）、词条化（tokenization）、命名实体识别（named entity recoginition）等。完成预处理后，我们的文本语料总共有2,807,147,626个词。为了降低词汇表的大小，我们还对所有词进行小写操作，并将所有既不是数字也不是字母的字符替换成空格，最后词汇表中共有5,514,818个词；
+	\item FB15K\quad FB15K是从Freebase中抽取出来的，其中所有的实体都在Wikilinks\footnote{http://code.google.com/p/wiki-links/}这一数据库中。在FB15K中，总共有14,951个实体、1,345个关系以及592,213个三元组；
+	\item FB45K\quad FB45K是由\cite{}提供的大规模知识库，其中包含了52,124,755个实体、4,490个关系以及204,120,782个三元组。为了验证对齐模型的有效性，我们留存出8,331,147个实体作为知识库以外（out-of-kb）的实体。同样地，我们也留存出24,610,400个三元组用于测试。由于留存的三元组中可能会有知识库以外的实体，所以我们把这些知识库以外的实体当作是文本中的词，并把这些三元组分成四类：都是知识库内的实体（$e-e$）、头部实体是知识库外的而尾部实体不是（$w-e$）、尾部实体是知识库外的而头部实体不是（$e-w$）以及头部实体和尾部实体都是知识库外的（$w-w$）。对于不在知识库内的实体，我们把它们替换成对应的实体名，并且只保留在词汇表中出现过的实体名以及包含它们的三元组。FB45K的具体数据信息如表\ref{tab:triplets}所示；
+	\item 知识库与文本的关系\quad 由于本文中我们所使用的知识库都是从Freebase中抽取生成的，而Freebase中的许多实体都是Wikipedia中的词条，因此我们可以把词条页中的内容当做是对应实体的描述信息。我们可以根据Freebase中的“/type/object/key”关系找出与Freebase实体一一对应的Wikipedia词条，最后，在FB15K中，共有14,787个实体存在着与之对应的词条，而FB45K中则有2,197,174个实体能够找到对应的词条。
+\end{enumerate}
+
+\subsubsection{实体的链接预测实验}
+实体的链接预测是为了在缺失头部实体或尾部实体时对三元组进行补全，这项任务需要对知识库内的所有实体进行排序。在本实验中，我们将使用FB15K作为模型的知识库，并参照以往研究中的评价标准\cite{}：对于测试集中的三元组，我们用知识库内的所有实体随机地对头部实体或尾部实体进行替换，然后根据新的三元组的评分进行排序，最后使用正确实体的平均排名（Mean）以及排名前十的实体中正确实体的比例（Hits@10）作为性能指标。然而，由于知识库中的关系可能不是一对一类型的，有可能存在着冲突，比如对于给定的关系和尾部实体，可能存在着多个不同的头部实体都是正确的。那么当这些冲突的三元组排在测试三元组前面时，我们需要把它过滤掉，从而公平地反映出模型的真实性能。在本实验中，我们将同时给出过滤前和过滤后的实验结果，并把它们分别命名为“Raw“和”Filtered“。在这两种设定下，一个好的模型应该具有较低的\textit{Mean}和较高的\textit{Hits@10}。具体实验结果如表\ref{tab:lpresult}所示：
+
+\begin{table}[H]
+	\caption{实体链接预测的实验结果}
+	\label{tab:lpresult}
+	\centering
+	\footnotesize{
+		\begin{tabular}{c|cc|cc}
+			\toprule
+			\multirow{2}{*}{性能指标} & \multicolumn{2}{c|}{MEAN} & \multicolumn{2}{c}{HITS@10}\\
+ 							&Raw			&Filtered 			&Raw 		&Filtered	\\
+			\midrule
+			TransE			&243			&125				&34.9			&47.1	\\
+			TransH(unif.)	&211			&84					&42.5			&58.5	\\
+			TransH(bern.)	&212			&87					&45.7			&64.4	\\
+			pTransE			&170			&52					&48.5			&70.0		\\
+			Jointly(anchor)	&\textbf{166}	&47					&49.9			&72.0		\\
+			\midrule
+			Jointly(p2v)	&167			&\textbf{39}		&\textbf{51.7}	&\textbf{77.3}		\\
+			\bottomrule
+		\end{tabular}
+	}
+\end{table}
+
+其中，Jointly(anchor)指的是Wang等人论文中提出的基于维基百科实体链接的联合表示方法\cite{}，而Jointly(p2v)指的是本章中提出的基于篇章向量的联合表示方法。观察实验结果，我们可以发现：
+\begin{enumerate}
+	\item pTransE、Jointly(anchor)和Jointly(p2v)都一致地比其它基准方法（TransE和TransH）取得更好的结果，这表明了概率模型能够比非概率模型更好地学习出知识库的向量表示。区别于传统的非概率模型，概率模型在训练过程中，会对负样本进行采样，进而提高了实体之间的可区分性，因此在链接预测这项任务中取得了更优的性能；
+	\item 无论是基于维基百科实体链接的联合表示方法，还是本章提出的基于篇章向量的联合表示方法，都比单一的知识库模型（pTransE）有着更好的结果，这反映了外部的文本语料资源确实能够比较有效地提高实体的可区分性。直观地说，Jointly(anchor)方法表示了如何在文本中使用该实体，而Jointly(p2v)方法则表明了实体的具体定义，这两种方法都能够有效地使得一个实体区别于其它不同的实体；
+	\item 与基于维基百科实体链接的联合表示方法相比，本章提出的基于篇章向量的联合表示方法取得了比较接近的结果，这说明我们的方法还是具有一定可比性的。本章提出的方法虽然不需要任何人工标注信息，但是在链接预测这一任务上取得了与现有最优方法可比较的性能，表明了它的优越性和实用性。
+\end{enumerate}
+
+\subsubsection{三元组实例的分类实验}
+三元组的分类是为了验证给定的三元组$(h,r,t)$是否有效的，这是一个二类分类的问题，它常被研究人员们用来评测知识库表示的性能\cite{}。在本实验中，我们将使用FB44K作为模型的知识库，并参考Wang等人的实验设置检验知识库与文本联合表示的性能\cite{}：对于测试集中的三元组$(h,r,t)$，我们用学习得到的模型对其进行评分，如果其评分超过与该关系相关的阈值$\delta_r$，那么我们就认为这个三元组是有效的。反之，则认为该三元组无效。其中，$\delta_r$的值是通过最大化验证集上三元组分类任务的准确率而设定的。
+
+按照Wang等人的实验设置，我们根据三元组中的实体是否出现为知识库中的实体，将测试集中的三元组分为都是知识库内的实体（$e-e$）、头部实体是知识库外的而尾部实体不是（$w-e$）、尾部实体是知识库外的而头部实体不是（$e-w$）以及头部实体和尾部实体都是知识库外的（$w-w$），并分别报告方法在这四种类型中的分类准确率。无论是哪种类型的三元组，一个好的联合式表示模型都应该具有较高的准确率。具体实验结果如表\ref{tab:tcresult}：
+
+\begin{table}[H]
+	\caption{三元组分类的实验结果} 
+	\label{tab:tcresult}
+	\centering
+	\footnotesize{
+		\begin{tabular}{>{\centering\arraybackslash}m{1.6in}|>{\centering\arraybackslash}m{0.32in}>{\centering\arraybackslash}m{0.32in}>{\centering\arraybackslash}m{0.32in}>{\centering\arraybackslash}m{0.32in}>{\centering\arraybackslash}m{0.32in}}
+			\toprule
+			\multicolumn{1}{>{\centering\arraybackslash}m{1.6in}|}{类型}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{$e-e$}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{$w-e$}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{$e-w$}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{$w-w$}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{all}\\
+			\midrule
+			\multicolumn{1}{>{\centering\arraybackslash}m{1.6in}|}{Respectively}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{94.0}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{51.7}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{51.0}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{69.0}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{73.6}\\
+			\multicolumn{1}{>{\centering\arraybackslash}m{1.6in}|}{Jointly(anchor)}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{95.2}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{65.3}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{65.1}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{76.2}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{79.9}\\
+			\midrule
+			\multicolumn{1}{>{\centering\arraybackslash}m{1.6in}|}{Jointly(p2v)}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{96.1}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{66.7}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{66.1}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{76.4}}&\multicolumn{1}{>{\centering\arraybackslash}m{0.32in}}{\textbf{80.9}}\\
+			\bottomrule
+		\end{tabular}
+	}
+\end{table}
+
+其中，Respectively模型只有单独的知识库模型和文本模型，并没有任何对齐模型，所获得的知识库向量和文本向量是不在同一向量空间中的。在三元组的分类实验中加入Respectively作为对比模型，有利于我们证明对齐模型的有效性\cite{}。观察实验结果，我们可以发现：
+\begin{enumerate}
+	\item 无论是基于维基百科实体链接的联合表示方法，还是本章提出的基于篇章向量的联合表示方法，都比没有对齐模型的Respectively模型有着更高的准确率，这表明了两种对齐模型的有效性。通过维基百科中的实体链接或者实体的描述文本都能够有效地对齐知识库向量和文本向量，使得它们位于同一个向量空间中，因此在涉及非知识库内的实体时，两种模型都能取得较高的准确率；
+	\item 本章提出的基于篇章向量的联合表示方法在所有类型的三元组中都取得了与基于维基百科实体链接的联合表示方法比较接近的效果，这说明了基于实体描述文本的对齐机制的合理性。通过实体以及对应的描述文本，我们可以有效地将知识库向量和文本向量对齐到同一个向量空间中，由此完成知识库和文本的联合表示。
+\end{enumerate}
+
+\subsubsection{词的类比推理实验}
+文本词的类比推理是Mikolov等人为了检验词向量质量而提出的标准实验\cite{}，其中包含了5种类型的语义问题以及9种类型的语法问题，如“France”与哪一个词的关系会跟“Germany”与“Berlin”的关系比较相似，具体的做法是从词汇表中选出词$x$，使得$vec(x)$与$vec(\text{“Berlin”})-vec(\text{“Germany”})+vec(\text{“France”})$的欧式距离比较小或者余弦相似度比较高。在标准的类比推理数据集中，包含了19,544个词汇级别的类比推理问题\footnote{\url{code.google.com/p/word2vec/source/browse/trunk/questions-words.txt}}以及3,218个短语级别的类比推理问题\footnote{\url{code.google.com/p/word2vec/source/browse/trunk/questions-phrases.txt}}。
+
+在本小节的实验中，我们参考Wang等人的实验设置\cite{}：只考虑词汇表中最频繁出现的前$K$个词。对于给定的类比推理问题$(h_1, t_1, h_2, t_2)$，我们根据$\mathbf{h}_{2}+(\mathbf{t}_{1}-\mathbf{h}_{1})$和$\mathbf{w}$的欧几里得距离枚举词汇表最频繁出现的前$K$个词中除$h_1$、$t_1$和$h_2$以外的词$w$，并按照距离的大小进行升序排序，最后报告准确率（Accuracy）和排名前十的词中正确词的比例（Hits@10）。对于词汇级别的类比推理问题，我们把$K$设为200,000，而对于短语，为了保证模型的召回率，我们使得$K$的值为1,000,000。在这样的设定下，一个好的模型应该具有较高的\textit{Accuracy}和较高的\textit{Hits@10}。具体实验结果如表\ref{tab:wordarresult}和表\ref{tab:phrasearresult}所示：
+
+\begin{table}
+	\caption{词汇级别类比推理的实验结果}
+	\label{tab:wordarresult}
+	\centering
+	\begin{tabular}{c|>{\centering\arraybackslash}m{0.13\textwidth}|>{\centering\arraybackslash}m{0.11\textwidth}}
+		\toprule
+		性能指标			&Accuracy(\%)		&Hits@10(\%)\\
+		\midrule
+		Skip-gram		&67.4				&86.7\\
+		Jointly(anchor)	&\textbf{69.4}		&87.7\\
+		Jointly(name)	&44.5				&69.7\\
+		\midrule
+		Jointly(p2v)	&69.3				&\textbf{88.3}\\
+		\bottomrule
+	\end{tabular}
+\end{table}
+\begin{table}
+	\caption{短语级别类比推理的实验结果}
+	\label{tab:phrasearresult}
+	\centering
+	\begin{tabular}{c|>{\centering\arraybackslash}m{0.13\textwidth}|>{\centering\arraybackslash}m{0.11\textwidth}}
+		\toprule
+		性能指标			&Accuracy(\%)		&Hits@10(\%)\\
+		\midrule
+		Skip-gram		&22.0				&63.6\\
+		Jointly(anchor)	&26.2				&68.1\\
+		Jointly(name)	&11.5				&46.0\\
+		\midrule
+		Jointly(p2v)	&\textbf{49.0}		&\textbf{86.5}\\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+其中Jointly(name)指的是基于实体别名的联合表示方法\cite{}，为了进一步验证Wang等人论文中的实验结论：基于实体别名的联合表示方法将严重降低词向量的质量，我们在本小节的词类比推理实验中，也考虑这种联合表示方法，并与本章提出的基于篇章向量的联合表示方法进行详细的比较。观察实验结果，我们可以发现：
+\begin{enumerate}
+	\item 无论是词汇级别的类比推理，还是短语级别的类比推理，基于维基百科实体链接的联合表示方法和基于篇章向量的联合表示方法都比单一的文本模型（Skip-gram）有着更好的结果，这说明了合理的知识库与文本联合表示模型能够有效地提高词向量的质量。在这两种联合表示方法中，模型都能够很好地将知识库中的信息融合进词向量中，因此能够有效地提高词与词之间的可区分性；
+	\item 正如Wang等人的实验结论，基于实体别名的联合表示方法严重降低了词向量的质量，大大影响了这种联合表示方法的实用性；
+	\item 本章提出的基于篇章向量的联合表示方法取得了与基于实体链接的联合表示方法比较接近的结果，这说明了利用实体的描述文本，本章提出的基于篇章向量的对齐模型能够有效地对齐知识库向量和文本向量，从而提高词向量的可区分度。
+\end{enumerate}
+
 \subsection{本章小结}
