@@ -9,19 +9,19 @@
 \subsection{改进篇章向量的对齐模型}
 在基于篇章向量的对齐模型中，我们定义了$\Pr(w | e)$作为给定实体$e$时，词$w$出现在其对应的描述文本中的概率，并通过最大似然估计，对实体向量和词向量进行对齐。同样地，我们也可以通过修改对应的正则项，定义$\Pr(e | w)$为给定文本词$w$时，实体$e$作为其描述的实体的概率，具体的定义如公式\ref{eqn:ewprobability}所示。
 \begin{equation}
-	\Pr(e|w)=\frac{\exp\{z(e,w)\}}{\sum_{\tilde{e}\in\mc{E}}\exp\{z(\tilde{e},w)\}}
+	\Pr(e|w)=\frac{\exp\{z(e,w)\}}{\sum_{\tilde{e}\in E}\exp\{z(\tilde{e},w)\}}
 	\label{eqn:ewprobability}
 \end{equation}
 
-根据$\Pr(w | e)$和$\Pr(e | w)$的定义，我们可以定义$\mc{L}_p(e,w)$作为实体$e$和词$w$的似然函数，具体定义如公式\ref{eqn:ewlikelihood}所示。
+根据$\Pr(w | e)$和$\Pr(e | w)$的定义，我们可以定义$\L_p(e,w)$作为实体$e$和词$w$的似然函数，具体定义如公式\ref{eqn:ewlikelihood}所示。
 \begin{equation}
-	\mc{L}_p(e,w) = \log\Pr(w|e) + \log\Pr(e|w)
+	\L_p(e,w) = \log\Pr(w|e) + \log\Pr(e|w)
 	\label{eqn:ewlikelihood}
 \end{equation}
 
 因此，通过对所有实体及其对应描述文本的似然函数进行最大似然估计，我们就能完成实体向量和词向量的对齐操作：
 \begin{equation}
-	\mc{L}_A = \sum_{i=1}^{|\mc{E}|}\sum_{n=1}^{N_i}\mc{L}_p(e_i, w_{i,n})
+	\L_A = \sum_{i=1}^{|E|}\sum_{n=1}^{N_i}L_p(e_i, w_{i,n})
 	\label{eqn:newalignobjective}
 \end{equation}
 
@@ -31,7 +31,7 @@
 在对本文提出的联合表示模型进行训练时，我们将使用随机梯度下降方法（Stochastic Gradient Descent）对知识库模型、文本模型和对齐模型同时进行优化。同时，为了提高程序的性能，我们参考了word2vec的实现，使用多线程机制对模型进行异步训练，并将实体向量、关系向量和词向量存储在共享的内存空间中，使得各个模型都能直接获取这些向量并进行修改。由于实体和词的数量都是比较大的，如果对模型中的概率和似然函数直接进行计算，需要庞大的计算资源和耗费大量的时间，这是不切实际的。因此，在本文中，我们将采用负采样技术对模型的训练进行优化。
 
 \subsubsection{负采样技术}
-在Skip-gram模型中，我们需要对概率$\Pr(w|v)$进行计算。根据$\Pr(w|v)$的定义，我们可以发现，公式\ref{eqn:wvprobability}中的分母需要对词汇表$\mc{V}$中的所有词进行计算，这需要耗费大量的计算时间。为了节省计算$\Pr(w|v)$时分母所需要的庞大计算量，Mnih等人尝试利用层次softmax（Hierarchical Softmax）的技术对其进行优化\cite{}。层次softmax技术通过对词汇表中的词构造一个树形结构，使得求解对应的概率值时，只需要$O(log| \mc{V} |)$次运算，而不再需要此前的$O(| \mc{V} |)$次运算，极大地降低了模型的时间复杂度。然而，由于层次softmax高度依赖于构造的树形结构，所以Mikolov等人在2013年提出了负采样技术（Negative Sampling），能够在保证Skip-gram模型性能的同时有效地提升Skip-gram的训练效率\cite{}。
+在Skip-gram模型中，我们需要对概率$\Pr(w|v)$进行计算。根据$\Pr(w|v)$的定义，我们可以发现，公式\ref{eqn:wvprobability}中的分母需要对词汇表$V$中的所有词进行计算，这需要耗费大量的计算时间。为了节省计算$\Pr(w|v)$时分母所需要的庞大计算量，Mnih 等人尝试利用层次softmax（Hierarchical Softmax）的技术对其进行优化\cite{}。层次softmax技术通过对词汇表中的词构造一个树形结构，使得求解对应的概率值时，只需要$O(log| V |)$次运算，而不再需要此前的$O(| V |)$次运算，极大地降低了模型的时间复杂度。然而，由于层次softmax高度依赖于构造的树形结构，所以Mikolov等人在2013年提出了负采样技术（Negative Sampling），能够在保证Skip-gram模型性能的同时有效地提升Skip-gram的训练效率\cite{}。
 
 为了避免精确计算出$\Pr(w|v)$中分母的正则项，负采样技术构造一个与之接近的优化目标，使得在最大化正样本的似然函数的同时，也能最小化负样本的似然函数：
 \begin{equation}
@@ -63,12 +63,12 @@
 \caption{联合表示模型的学习算法}
 \label{learningalgo}
 	\begin{algorithmic}[1]
-		\Require 
-		 	knowledge base $\Delta={(h,r,t)}$, entity set $\mc{E}$, relation set $\mc{R}$; 
-		 	text corpus $\Theta={(e,d)}$, word vocabulary $\mc{V}$;
+		\Require
+		 	knowledge base $\Delta={(h,r,t)}$, entity set $E$, relation set $R$;
+		 	text corpus $\Theta={(e,d)}$, word vocabulary $V$;
 		 	dimension of embeddings $k$, number of negative samples $c$, max skip-range $s$, learning rate $\alpha$, maximum epoches $m,n$.
 		 \Ensure
-		 	all the embeddings of $h, r, t$ and $w$, where $h,t \in \mc{E}$, $r \in \mc{R}$ and $w \in \mc{V}$.
+		 	all the embeddings of $h, r, t$ and $w$, where $h,t \in E$, $r \in R$ and $w \in V$.
 		 \State /*Thread for training knowledge model*/
 		 \Function{KnowledgeModel}{}
 		 	\For{$i\in$ range$(m)$}
@@ -96,14 +96,14 @@
 		 	\State signal $\gets 1$
 		 \EndFunction
 		 \State
-		 \State signal $\gets 0$ 
-		 \For {$e\in\mc{E}$}
+		 \State signal $\gets 0$
+		 \For {$e\in E$}
 		 	\State $e \gets$ Uniform$(\frac{-6}{\sqrt{k}}, \frac{6}{\sqrt{k}})$
 		 \EndFor
-		 \For {$r\in\mc{R}$}
+		 \For {$r\in R$}
 		 	\State $r \gets$ Uniform$(\frac{-6}{\sqrt{k}}, \frac{6}{\sqrt{k}})$
 		 \EndFor
-		 \For {$w\in\mc{V}$}
+		 \For {$w\in V$}
 		 	\State $w \gets$ Uniform$(\frac{-6}{\sqrt{k}}, \frac{6}{\sqrt{k}})$
 		 \EndFor
 		 \State
@@ -148,7 +148,7 @@
 我们将在FB44K上进行三元组的分类实验，并报告模型在四种不同类型的三元组中的分类准确率：都是知识库内的实体（$e-e$）、头部实体是知识库外的而尾部实体不是（$w-e$）、尾部实体是知识库外的而头部实体不是（$e-w$）以及头部实体和尾部实体都是知识库外的（$w-w$）。根据模型在验证集上的结果，我们选择模型在三元组分类实验中的最优参数设置：$k=150, \alpha=0.025, c=10, s=5$以及遍历文本语料$6$次。模型在测试集上的实验结果具体如表\ref{tab:newtcresult}所示。
 
 \begin{table}[H]
-	\caption{三元组分类的实验结果} 
+	\caption{三元组分类的实验结果}
 	\label{tab:newtcresult}
 	\centering
 	\footnotesize{
